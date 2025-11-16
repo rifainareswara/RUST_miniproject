@@ -1,0 +1,465 @@
+<!--<!DOCTYPE html>-->
+<!--<html lang="en">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+<!--    <title>Rust To-Do List</title>-->
+<!--    <style>-->
+<!--        body { font-family: sans-serif; max-width: 600px; margin: 40px auto; background: #f4f4f4; }-->
+<!--        h1 { text-align: center; color: #333; }-->
+<!--        #task-list { list-style: none; padding: 0; }-->
+<!--        #task-list li {-->
+<!--            display: flex;-->
+<!--            justify-content: space-between;-->
+<!--            align-items: center;-->
+<!--            padding: 12px 15px;-->
+<!--            border-bottom: 1px solid #ddd;-->
+<!--            background: #fff;-->
+<!--            margin-bottom: 5px;-->
+<!--            border-radius: 4px;-->
+<!--        }-->
+
+<!--        /* Grup untuk deskripsi dan input edit */-->
+<!--        .task-content {-->
+<!--            flex-grow: 1;-->
+<!--        }-->
+
+<!--        /* Teks deskripsi (normal) */-->
+<!--        .task-deskripsi {-->
+<!--            cursor: pointer;-->
+<!--        }-->
+
+<!--        /* Input untuk edit (tersembunyi) */-->
+<!--        .edit-input {-->
+<!--            flex-grow: 1;-->
+<!--            padding: 5px;-->
+<!--            font-size: 1em;-->
+<!--            display: none; /* Sembunyi secara default */-->
+<!--            border: 1px solid #ccc;-->
+<!--            border-radius: 4px;-->
+<!--        }-->
+
+<!--        /* Grup untuk tombol */-->
+<!--        .task-actions {-->
+<!--            display: flex;-->
+<!--            gap: 5px;-->
+<!--            margin-left: 10px;-->
+<!--        }-->
+
+<!--        /* Tombol standar */-->
+<!--        .btn {-->
+<!--            border: none;-->
+<!--            color: white;-->
+<!--            padding: 6px 10px;-->
+<!--            border-radius: 4px;-->
+<!--            cursor: pointer;-->
+<!--            font-size: 0.9em;-->
+<!--        }-->
+
+<!--        .delete-btn { background: #e74c3c; }-->
+<!--        .edit-btn { background: #3498db; }-->
+<!--        .save-btn { background: #2ecc71; display: none; } /* Sembunyi default */-->
+
+<!--        /* Form input baru */-->
+<!--        #new-task-form { display: flex; margin-top: 20px; }-->
+<!--        #new-task-input {-->
+<!--            flex-grow: 1;-->
+<!--            padding: 12px;-->
+<!--            border: 1px solid #ddd;-->
+<!--            border-radius: 4px 0 0 4px;-->
+<!--        }-->
+<!--        #add-task-btn {-->
+<!--            padding: 12px 15px;-->
+<!--            border: none;-->
+<!--            background: #3498db;-->
+<!--            color: white;-->
+<!--            cursor: pointer;-->
+<!--            border-radius: 0 4px 4px 0;-->
+<!--        }-->
+<!--    </style>-->
+<!--</head>-->
+<!--<body>-->
+
+<!--<h1>📝 Daftar Tugas (Rust + Actix + Mongo)</h1>-->
+
+<!--<ul id="task-list">-->
+<!--</ul>-->
+
+<!--<form id="new-task-form">-->
+<!--    <input type="text" id="new-task-input" placeholder="Apa yang ingin Anda lakukan?" required>-->
+<!--    <button id="add-task-btn" type="submit">Tambah</button>-->
+<!--</form>-->
+
+<!--<script>-->
+<!--    const API_URL = '/api';-->
+<!--    const taskList = document.getElementById('task-list');-->
+<!--    const taskForm = document.getElementById('new-task-form');-->
+<!--    const taskInput = document.getElementById('new-task-input');-->
+
+<!--    // FUNGSI UNTUK MENGAMBIL DAN MENAMPILKAN TUGAS (DIMODIFIKASI)-->
+<!--    async function fetchTasks() {-->
+<!--        try {-->
+<!--            const response = await fetch(`${API_URL}/tasks`);-->
+<!--            const tasks = await response.json();-->
+<!--            taskList.innerHTML = ''; // Bersihkan daftar lama-->
+
+<!--            tasks.forEach(task => {-->
+<!--                const li = document.createElement('li');-->
+
+<!--                const taskId = task._id.$oid; // Ambil ID-->
+
+<!--                // Konten (Teks dan Input)-->
+<!--                const contentDiv = document.createElement('div');-->
+<!--                contentDiv.className = 'task-content';-->
+
+<!--                const deskripsiSpan = document.createElement('span');-->
+<!--                deskripsiSpan.className = 'task-deskripsi';-->
+<!--                deskripsiSpan.textContent = task.deskripsi;-->
+
+<!--                const editInput = document.createElement('input');-->
+<!--                editInput.className = 'edit-input';-->
+<!--                editInput.type = 'text';-->
+<!--                editInput.value = task.deskripsi;-->
+
+<!--                contentDiv.appendChild(deskripsiSpan);-->
+<!--                contentDiv.appendChild(editInput);-->
+
+<!--                // Aksi (Tombol-tombol)-->
+<!--                const actionsDiv = document.createElement('div');-->
+<!--                actionsDiv.className = 'task-actions';-->
+
+<!--                const editBtn = document.createElement('button');-->
+<!--                editBtn.className = 'btn edit-btn';-->
+<!--                editBtn.textContent = 'Edit';-->
+
+<!--                const saveBtn = document.createElement('button');-->
+<!--                saveBtn.className = 'btn save-btn';-->
+<!--                saveBtn.textContent = 'Simpan';-->
+
+<!--                const deleteBtn = document.createElement('button');-->
+<!--                deleteBtn.className = 'btn delete-btn';-->
+<!--                deleteBtn.textContent = 'Hapus';-->
+
+<!--                actionsDiv.appendChild(editBtn);-->
+<!--                actionsDiv.appendChild(saveBtn);-->
+<!--                actionsDiv.appendChild(deleteBtn);-->
+
+<!--                // Gabungkan ke 'li'-->
+<!--                li.appendChild(contentDiv);-->
+<!--                li.appendChild(actionsDiv);-->
+
+<!--                // Tambahkan 'li' ke daftar-->
+<!--                taskList.appendChild(li);-->
+
+<!--                // -&#45;&#45; Event Listeners untuk Tombol -&#45;&#45;-->
+
+<!--                // Tombol Edit-->
+<!--                editBtn.addEventListener('click', () => {-->
+<!--                    deskripsiSpan.style.display = 'none';-->
+<!--                    editBtn.style.display = 'none';-->
+<!--                    editInput.style.display = 'inline-block';-->
+<!--                    saveBtn.style.display = 'inline-block';-->
+<!--                    editInput.focus();-->
+<!--                });-->
+
+<!--                // Tombol Simpan (Save)-->
+<!--                saveBtn.addEventListener('click', () => {-->
+<!--                    const newDeskripsi = editInput.value;-->
+<!--                    if (newDeskripsi) {-->
+<!--                        updateTask(taskId, newDeskripsi);-->
+<!--                    }-->
+<!--                });-->
+
+<!--                // Tombol Hapus (Delete)-->
+<!--                deleteBtn.addEventListener('click', () => deleteTask(taskId));-->
+<!--            });-->
+
+<!--        } catch (error) {-->
+<!--            console.error('Gagal mengambil tugas:', error);-->
+<!--        }-->
+<!--    }-->
+
+<!--    // FUNGSI UNTUK MENAMBAH TUGAS (TETAP SAMA)-->
+<!--    async function addTask(event) {-->
+<!--        event.preventDefault();-->
+<!--        const deskripsi = taskInput.value;-->
+<!--        if (!deskripsi) return;-->
+
+<!--        try {-->
+<!--            const response = await fetch(`${API_URL}/tasks`, {-->
+<!--                method: 'POST',-->
+<!--                headers: { 'Content-Type': 'application/json' },-->
+<!--                body: JSON.stringify({ deskripsi: deskripsi }),-->
+<!--            });-->
+<!--            if (response.ok) {-->
+<!--                taskInput.value = '';-->
+<!--                fetchTasks(); // Muat ulang-->
+<!--            } else {-->
+<!--                console.error('Gagal menambah tugas');-->
+<!--            }-->
+<!--        } catch (error) {-->
+<!--            console.error('Error:', error);-->
+<!--        }-->
+<!--    }-->
+
+<!--    // FUNGSI UNTUK MENGHAPUS TUGAS (TETAP SAMA)-->
+<!--    async function deleteTask(id) {-->
+<!--        if (!confirm('Anda yakin ingin menghapus tugas ini?')) return;-->
+<!--        try {-->
+<!--            const response = await fetch(`${API_URL}/tasks/${id}`, {-->
+<!--                method: 'DELETE',-->
+<!--            });-->
+<!--            if (response.ok) {-->
+<!--                fetchTasks(); // Muat ulang-->
+<!--            } else {-->
+<!--                console.error('Gagal menghapus tugas');-->
+<!--            }-->
+<!--        } catch (error) {-->
+<!--            console.error('Error:', error);-->
+<!--        }-->
+<!--    }-->
+
+<!--    // -&#45;&#45; FUNGSI BARU UNTUK UPDATE TUGAS -&#45;&#45;-->
+<!--    async function updateTask(id, newDeskripsi) {-->
+<!--        try {-->
+<!--            const response = await fetch(`${API_URL}/tasks/${id}`, {-->
+<!--                method: 'PUT',-->
+<!--                headers: { 'Content-Type': 'application/json' },-->
+<!--                body: JSON.stringify({ deskripsi: newDeskripsi }),-->
+<!--            });-->
+<!--            if (response.ok) {-->
+<!--                fetchTasks(); // Muat ulang daftar setelah berhasil-->
+<!--            } else {-->
+<!--                console.error('Gagal memperbarui tugas');-->
+<!--            }-->
+<!--        } catch (error) {-->
+<!--            console.error('Error:', error);-->
+<!--        }-->
+<!--    }-->
+
+<!--    // Event listener untuk form utama-->
+<!--    taskForm.addEventListener('submit', addTask);-->
+
+<!--    // Muat tugas saat halaman pertama kali dibuka-->
+<!--    fetchTasks();-->
+<!--</script>-->
+<!--</body>-->
+<!--</html>-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rust To-Do List (Terpisah)</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 40px auto; background: #f4f4f4; }
+        h1 { text-align: center; color: #333; }
+        #task-list { list-style: none; padding: 0; }
+        #task-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+            background: #fff;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+        .task-content { flex-grow: 1; }
+        .task-deskripsi { cursor: pointer; }
+        .edit-input {
+            flex-grow: 1;
+            padding: 5px;
+            font-size: 1em;
+            display: none;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .task-actions { display: flex; gap: 5px; margin-left: 10px; }
+        .btn {
+            border: none;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .delete-btn { background: #e74c3c; }
+        .edit-btn { background: #3498db; }
+        .save-btn { background: #2ecc71; display: none; }
+        #new-task-form { display: flex; margin-top: 20px; }
+        #new-task-input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+        }
+        #add-task-btn {
+            padding: 12px 15px;
+            border: none;
+            background: #3498db;
+            color: white;
+            cursor: pointer;
+            border-radius: 0 4px 4px 0;
+        }
+    </style>
+</head>
+<body>
+
+<h1>📝 Daftar Tugas (Rust + Actix + Mongo)</h1>
+<ul id="task-list"></ul>
+<form id="new-task-form">
+    <input type="text" id="new-task-input" placeholder="Apa yang ingin Anda lakukan?" required>
+    <button id="add-task-btn" type="submit">Tambah</button>
+</form>
+
+<script>
+    // --- PERUBAHAN KUNCI DI SINI ---
+    // Kita gunakan URL lengkap (absolut) ke server backend Anda
+    const API_URL = 'http://localhost:3000';
+
+    const taskList = document.getElementById('task-list');
+    const taskForm = document.getElementById('new-task-form');
+    const taskInput = document.getElementById('new-task-input');
+
+    // FUNGSI UNTUK MENGAMBIL DAN MENAMPILKAN TUGAS
+    async function fetchTasks() {
+        try {
+            // Sekarang memanggil: http://localhost:3000/tasks
+            const response = await fetch(`${API_URL}/tasks`);
+            const tasks = await response.json();
+            taskList.innerHTML = '';
+
+            tasks.forEach(task => {
+                const li = document.createElement('li');
+                const taskId = task._id.$oid;
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'task-content';
+
+                const deskripsiSpan = document.createElement('span');
+                deskripsiSpan.className = 'task-deskripsi';
+                deskripsiSpan.textContent = task.deskripsi;
+
+                const editInput = document.createElement('input');
+                editInput.className = 'edit-input';
+                editInput.type = 'text';
+                editInput.value = task.deskripsi;
+
+                contentDiv.appendChild(deskripsiSpan);
+                contentDiv.appendChild(editInput);
+
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'task-actions';
+
+                const editBtn = document.createElement('button');
+                editBtn.className = 'btn edit-btn';
+                editBtn.textContent = 'Edit';
+
+                const saveBtn = document.createElement('button');
+                saveBtn.className = 'btn save-btn';
+                saveBtn.textContent = 'Simpan';
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn delete-btn';
+                deleteBtn.textContent = 'Hapus';
+
+                actionsDiv.appendChild(editBtn);
+                actionsDiv.appendChild(saveBtn);
+                actionsDiv.appendChild(deleteBtn);
+
+                li.appendChild(contentDiv);
+                li.appendChild(actionsDiv);
+
+                taskList.appendChild(li);
+
+                // Event Listeners
+                editBtn.addEventListener('click', () => {
+                    deskripsiSpan.style.display = 'none';
+                    editBtn.style.display = 'none';
+                    editInput.style.display = 'inline-block';
+                    saveBtn.style.display = 'inline-block';
+                    editInput.focus();
+                });
+
+                saveBtn.addEventListener('click', () => {
+                    const newDeskripsi = editInput.value;
+                    if (newDeskripsi) {
+                        updateTask(taskId, newDeskripsi);
+                    }
+                });
+
+                deleteBtn.addEventListener('click', () => deleteTask(taskId));
+            });
+
+        } catch (error) {
+            console.error('Gagal mengambil tugas:', error);
+        }
+    }
+
+    // FUNGSI UNTUK MENAMBAH TUGAS
+    async function addTask(event) {
+        event.preventDefault();
+        const deskripsi = taskInput.value;
+        if (!deskripsi) return;
+
+        try {
+            // Memanggil: POST http://localhost:3000/tasks
+            const response = await fetch(`${API_URL}/tasks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ deskripsi: deskripsi }),
+            });
+            if (response.ok) {
+                taskInput.value = '';
+                fetchTasks();
+            } else {
+                console.error('Gagal menambah tugas');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    // FUNGSI UNTUK MENGHAPUS TUGAS
+    async function deleteTask(id) {
+        if (!confirm('Anda yakin ingin menghapus tugas ini?')) return;
+        try {
+            // Memanggil: DELETE http://localhost:3000/tasks/{id}
+            const response = await fetch(`${API_URL}/tasks/${id}`, {
+                method: 'DELETE',
+            });
+            if (response.ok) {
+                fetchTasks();
+            } else {
+                console.error('Gagal menghapus tugas');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    // FUNGSI UNTUK UPDATE TUGAS
+    async function updateTask(id, newDeskripsi) {
+        try {
+            // Memanggil: PUT http://localhost:3000/tasks/{id}
+            const response = await fetch(`${API_URL}/tasks/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ deskripsi: newDeskripsi }),
+            });
+            if (response.ok) {
+                fetchTasks();
+            } else {
+                console.error('Gagal memperbarui tugas');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    taskForm.addEventListener('submit', addTask);
+    fetchTasks();
+</script>
+</body>
+</html>
